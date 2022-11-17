@@ -1,0 +1,4 @@
+- choose the least amount of stocks possible, in this case 12, so that our portfolio is as un-diversified as possible.
+- because we can choose the weighting of each stock, we will also choose to put the most amount of weight in the riskiest stocks
+- calculate the std of each stock, then consider correlation between them (closest to 1 as possible) 
+- make our own version of pearsons correlation formula to find the correlation 

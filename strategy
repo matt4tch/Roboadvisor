@@ -4,3 +4,18 @@
 - make our own version of pearsons correlation formula to find the correlation 
 
 - More precisely, we will calculate the correlation between each combination of 12 stocks
+kind each combination
+S1
+S2
+S3
+...
+SN, N > 25
+Find each combination of 12 stocks out of N of them, where N is the given amount in the Ticker file
+For each combination of 12 stocks, calculate the multivariable correlation between each of them and the standard deviation of a portfolio with 
+those 12 stocks from January to October 2022
+Assign the standard deviation and correlation (where correlation is between -1 and 1) a weight such that their sum is 100%
+Find the sum of the weighted standard deviation and correlation
+
+Motivation.
+Standard deviation is a measure of risk because it is a calculation of the average absolute distance of a stock's price from its expected value
+over some time interval (in this case, January to October), so we want to maximize lt because genearlly, price patterns are repeated

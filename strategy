@@ -18,4 +18,23 @@ Find the sum of the weighted standard deviation and correlation
 
 Motivation.
 Standard deviation is a measure of risk because it is a calculation of the average absolute distance of a stock's price from its expected value
-over some time interval (in this case, January to October), so we want to maximize lt because genearlly, price patterns are repeated
+over some time interval (in this case, January to October), so we want to maximize lt because generally, price patterns are repeated
+
+
+
+Main Algorithm: Returns the optimal combination of 12 stocks and their proportions
+
+Assume we start with N stocks, where N > 25.
+1) Base Case (N=12), Return a call of Algorithm 2, passing in a list of a list of 12 stocks and the standard deviation of their price weighted index
+2) Apply Algorithm 1, passing in a list of N-2 stocks and the two stocks with the highest correlation in the form of a price weighted index
+3) Store the list of 12 stocks returned by Algorithm 1 in a list, as well as the standard deviation of the price weighted index formed by those 12 stocks
+2) Apply Main Algorithm recursively, one step closer to the base case, with the stock of lowest standard deviation removed from the list of N stocks
+
+Algorithm 1:
+Assume we start with M stocks, where M = and a price weighted index.
+1) Base Case: 
+1) Calculate the correlation between each of the M stocks and the price weighted index
+2) Add the stock with the highest correlation
+3) Recurse on the N stocks minus the stocks added to the index, each time choosing the stock with the highest correlation to the index 
+
+Algorithm 2:

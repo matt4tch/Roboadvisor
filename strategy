@@ -22,19 +22,36 @@ over some time interval (in this case, January to October), so we want to maximi
 
 
 
-Main Algorithm: Returns the optimal combination of 12 stocks and their proportions
+Main Algorithm:
+Let k be the number of stocks we're choosing to be in our portfolio. In this case, we have chosen k = 12.
 
-Assume we start with N stocks, where N > 25.
-1) Base Case (N=12), Return a call of Algorithm 2, passing in a list of a list of 12 stocks and the standard deviation of their price weighted index
-2) Apply Algorithm 1, passing in a list of N-2 stocks and the two stocks with the highest correlation in the form of a price weighted index
-3) Store the list of 12 stocks returned by Algorithm 1 in a list, as well as the standard deviation of the price weighted index formed by those 12 stocks
+;; A Portfolio is a
+;; (dictof (Ticker : Num))
+;; Requires:    dictof has k elements
+;;              Ticker is a Ticker object
+;;              1/(2k) <= Num <= 0.25
+;;              Sum(Nums) = 1
+
+;; main(N, listof_stock_portfolio) consumes a number of stocks to select from and a list of a list of k stocks (where each list represents a portfolio of k stocks)
+;; and produces a Portfolio
+
+Assume we start with N stocks, where N > 25 and N > k.
+1) Base Case (N=k), Return a call of Algorithm 2, passing in the list of k stocks chosen by highest price weighted index standard deviation
+2) Call Algorithm 1, passing in a list of N-2 stocks and the two stocks with the highest correlation in the form of a price weighted index
+3) Store the list of 12 stocks returned by Algorithm 1 in a list, as well as the standard deviation of the price weighted index formed by those k stocks
 2) Apply Main Algorithm recursively, one step closer to the base case, with the stock of lowest standard deviation removed from the list of N stocks
 
-Algorithm 1:
-Assume we start with M stocks, where M = and a price weighted index.
-1) Base Case: 
-1) Calculate the correlation between each of the M stocks and the price weighted index
-2) Add the stock with the highest correlation
-3) Recurse on the N stocks minus the stocks added to the index, each time choosing the stock with the highest correlation to the index 
 
+Algorithm 1:
+;; algo1(listof_stocks, priceweighted_index) consumes a listof_stocks and a price weighted index, recursively producing a list of 1 less stocks and price weighted index
+;; with the stock of highest correlation added to it, until the price weighted reaches enough stocks to form a portfolio of k stocks
+
+Assume we start with M stocks and a price weighted index with L stocks.
+1) Base Case: L = k, Return the list of stocks in the price weighted index
+1) Calculate the correlation between each of the M stocks and the price weighted index
+2) Add the stock with the highest correlation to the price weighted index and remove that same stock from the list of M stocks
+3) Recurse on the M-1 stocks and price index of L+1 stocks
+
+# Algorithm 2 calculates the optimal proportion of ownership in a stock
 Algorithm 2:
+Assume we start with (100/(24))% of the portfolio 

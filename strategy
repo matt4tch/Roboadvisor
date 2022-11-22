@@ -32,7 +32,7 @@ Let k be the number of stocks we're choosing to be in our portfolio. In this cas
 ;;              1/(2k) <= Num <= 0.25
 ;;              Sum(Nums) = 1
 
-;; main(N, listof_stock_portfolio) consumes a number of stocks to select from and a list of a list of k stocks (where each list represents a portfolio of k stocks)
+;; main(N, k, listof_stock_portfolio) consumes a number of stocks to select from and a list of a list of k stocks (where each list represents a portfolio of k stocks)
 ;; and produces a Portfolio
 
 Assume we start with N stocks, where N > 25 and N > k.

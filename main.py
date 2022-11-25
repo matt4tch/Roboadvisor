@@ -1,4 +1,5 @@
 from IPython.display import display, Math, Latex
+
 import pandas as pd
 import numpy as np
 import numpy_financial as npf
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from collections import Counter
 
 tickers = pd.read_csv('Tickers_Example.csv', header=None)
 
@@ -47,16 +49,32 @@ for i in range(0, len(tickers)):
             valid_tickers.append(ticker)
             tickers_history.append(daily_hist)
         
+        else:
+            print("{0} does not meet the required stock denomination or volume requirement".format(tickers.iloc[i][0]))
+    
+# initialize variables
+closing_prices = pd.DataFrame()
+daily_returns = pd.DataFrame()
+expected_return = []
+industries = []
 
-# *** Workings of main algorithm and create_portfolio, but DOES NOT RUN:
-# (N: # of available stocks) (CONST k: # of stocks to choose from N) (portfolios: list of portfolios of k stocks)
-# (remaining_tickers: list of strings representing tickers left to choose from)
-# : 
+# load yfinance data into DataFrames and lists
+for i in range(len(valid_tickers)):
+    closing_prices[valid_tickers[i].info['symbol']] = tickers_history[i]['Close']
+    daily_returns[valid_tickers[i].info['symbol']] = closing_prices[valid_tickers[i].info['symbol']].pct_change()
+    expected_return.append(daily_returns.iloc[i].mean() * 100)
+    
+# number of stocks to put into the portfolio
+n = 12
+   
+# create_portfolio generates a portfolio of stocks by adding the stock most correlated to an already formed portfolio of at least one stock
+# until tickers_needed number of stocks is reached
 
-def create_portfolio(tickers_added, remaining_tickers, pw_index_of_tickers_added, num_tickers_added, tickers_needed):
+# create_portfolio: list list DataFrame Nat Nat DataFrame
+def create_portfolio(tickers_added, remaining_tickers, pw_index_of_tickers_added, num_tickers_added, tickers_needed, daily_returns):
     
     if num_tickers_added == tickers_needed:
-        # need to return a list of tickers added AND the standard deviation of the corresponding index
+        # need to return a list of tickers added AND the price weighted index of the evenly distributed portfolio
         return [tickers_added, pw_index_of_tickers_added]
     else:
         # create a dataframe with the price weighted index and remaining tickers not added to the index so far
@@ -73,20 +91,26 @@ def create_portfolio(tickers_added, remaining_tickers, pw_index_of_tickers_added
         tickers_added.append(stock_to_add)
         num_tickers_added += 1
         
-        # remove the ticker from the list of remaining tickers
-        print(remaining_tickers)
-        
+        # remove the ticker from the list of remaining tickers      
         remaining_tickers.remove(stock_to_add)
         
-        return create_portfolio(tickers_added, remaining_tickers, pw_index_of_tickers_added, num_tickers_added, tickers_needed)
+        # recurse on the remaining available tickers
+        return create_portfolio(tickers_added, remaining_tickers, pw_index_of_tickers_added, num_tickers_added, tickers_needed, daily_returns)
 
     
 def main(N, k, portfolios, remaining_tickers, daily_returns):
-    if N == k:
-        return False
-        #get_weighting(listof_stocks, portfolios, k)
+    if N == k - 1:
+        pf_stds = []
+        for i in range(len(portfolios)):
+            # append the standard deviations of each portfolio to a list
+            pf_stds.append(portfolios[i][1].pct_change().std())
+        
+        # get maximum standard deviation portfolio
+        loc = pf_stds.index(max(pf_stds))
+        
+        return portfolios[loc][0]
     else:
-        # create a correlation matrix of all stocks in daily_returns dataframe
+        # create a correlation matrix of all stocks in daily_returns DataFrame
         correlation_df = daily_returns.corr()
 
         # replace correlation of 1 with Nan values
@@ -97,23 +121,123 @@ def main(N, k, portfolios, remaining_tickers, daily_returns):
         first_stock = series_stocks.idxmax(axis=0, skipna=True)
         series_stocks.drop(first_stock, inplace=True)
         second_stock = series_stocks.idxmax(axis=0, skipna=True)
- 
+
         # create price weighted index (setting the initial price of each stock to $1)
         price_weighted_index = closing_prices[first_stock] / closing_prices[first_stock][0] + closing_prices[second_stock] / closing_prices[second_stock][0]
-    
-        remaining_tickers.remove(first_stock)
-        remaining_tickers.remove(second_stock)
         
-        pf = create_portfolio([first_stock, second_stock], remaining_tickers, price_weighted_index, 2, 12)
+        temp_tickers = remaining_tickers.copy()
+        
+        temp_tickers.remove(first_stock)
+        temp_tickers.remove(second_stock)
+        
+        pf = create_portfolio([first_stock, second_stock], temp_tickers, price_weighted_index, 2, 12, daily_returns)
+
         portfolios.append(pf)
-      
-        # REMOVE stock with the lowest standard deviation from the list of stocks
+
+        # remove the stock with the lowest standard deviation from the list of stocks
         stock_to_drop = daily_returns.std().idxmin()
+        
+        # drop from both the dataframe AND the list of ticker names
         daily_returns.drop(stock_to_drop, axis=1, inplace=True)
+
         remaining_tickers.remove(stock_to_drop)
-    
+        
+        # recurse on the remaining_tickers, having added one of them to the portfolio, getting closer to the base case
         return main(N-1, k, portfolios, remaining_tickers, daily_returns)
         
-        
+# create a list of remaining tickers stored as a list of strings         
 remaining_tickers = [valid_tickers[i].info['symbol'] for i in range(len(valid_tickers))]
-main(len(valid_tickers), 12, [], remaining_tickers, daily_returns)
+
+# retrieve a list of possible portfolios with the highest correlation
+p = main(len(valid_tickers), n, [], remaining_tickers, daily_returns)
+
+# initializing boundaries 
+lower = 1/(2*n)
+upper = 0.25
+
+# number of test weights
+trials = 1000
+weights = []
+ticker_names = [valid_tickers[i].info['symbol'] for i in range(len(valid_tickers))]
+
+# generate "trials" amount of test weights
+for i in range(trials):
+    valid_weight = False
+    while not valid_weight:
+        temp = np.array(np.random.random(n))
+        temp /= np.sum(temp)
+        
+        # ensure the generated test weights are within the given interval
+        if np.all(temp >= lower) and np.all(temp <= upper):
+            valid_weight = True
+            weights.append(temp)
+
+# create an equally weighted portfolio with n stocks where each stock has an initial value of $1 in the portfolio
+pf = pd.DataFrame()
+
+for i in range(n):
+    pf[p[i]] = closing_prices[p[i]] / closing_prices[p[i]].iloc[0]
+    
+pf['Portfolio'] = pf.sum(axis=1)
+
+
+# display the portfolio
+plt.figure(figsize=(13,9))
+plt.plot(pf.index, pf['Portfolio'] / n, marker='.', label='Equal Weighting') # division by n to scale the portfolio down
+
+plt.title("Portfolio Value")
+plt.xlabel('Date')
+plt.xticks(rotation=45)
+plt.ylabel("Price (USD)")
+plt.legend()
+
+pf_diff = []
+for w in weights:
+    pf_temp = pd.DataFrame()
+    
+    # create portfolio of the n stocks in p, with a weighting of val assigned to each (i+1)th stock
+    i = 0
+    for val in w:
+        pf_temp[p[i]] = pf[p[i]] * val
+        i += 1
+        
+    pf_temp['Portfolio'] = pf_temp.sum(axis=1)
+    
+    # append the absolute difference between the start and end price to a related list
+    pf_diff.append(abs(pf_temp['Portfolio'].iloc[0] - pf_temp['Portfolio'].iloc[-1]))
+    
+    # plot portfolio p with weightings corresponding to w
+    x = pf_temp.index
+    y = pf_temp['Portfolio']
+    plt.plot(x, y, marker='.', label=str(num))
+
+optimal_weight = weights[np.argmax(pf_diff)]
+
+investment = 500000
+closing = []
+shares = []
+value = []
+for i in range(n):
+    closing_price = valid_tickers[ticker_names.index(p[i])].history(start='2022-11-23', end='2022-11-24')['Close']
+    closing.append(np.float32(closing_price)[0])
+    shares.append(investment*optimal_weight[i] / closing[i])
+    value.append(closing[i]*shares[i])
+
+Portfolio_Final = pd.DataFrame(index=[i for i in range(1, n+1)])
+
+Portfolio_Final['Ticker'] = p
+Portfolio_Final['Price'] = closing
+Portfolio_Final['Shares'] = shares
+Portfolio_Final['Value'] = value
+Portfolio_Final['Weight'] = optimal_weight * 100
+
+# check to ensure that the weights adds to $100 and the investment size is correct
+print("Total Weight: {0}%".format(sum(Portfolio_Final['Weight'])))
+print("Total Investment Value: ${0}".format(sum(Portfolio_Final['Value'])))
+
+display(Portfolio_Final)
+
+Stocks_Final = Portfolio_Final[['Ticker', 'Shares']]
+Stocks_Final.to_csv("Stocks_Group_13.csv")
+display(Stocks_Final)
+  

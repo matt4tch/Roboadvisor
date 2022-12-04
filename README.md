@@ -1,5 +1,4 @@
-# CFM-101-Final-Project
-Roboadvisor stock picker.
+# Roboadvisor
 
 The strategy we chose was to make the portfolio as risky as possible, which meant targeting the maximum possible absolute difference between its starting and ending value between November 25th and December 2nd (5 trading days). To do so, we identified three main parameters in our control and created/implemented a strategy that could maximize our success by manipulating them.
 
